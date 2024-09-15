@@ -1,0 +1,233 @@
+openapi: 3.0.0
+info:
+  title:  API
+  version: 1.0.0
+  description: API to get a summary overview of Farcaster users and channels.
+
+paths:
+  /channel/{channelID}/metrics:
+    get:
+      summary: Get channel metrics
+      description: >
+        Retrieves overall metrics for a specific channel, including total casts, replies, likes, recasts, and active users. This data helps channel owners and developers assess the channel's health and activity level.
+      parameters:
+        - name: channelID
+          in: path
+          required: true
+          description: The unique identifier of the channel.
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: false
+          description: >
+            The date for which metrics are requested, in YYYY-MM-DD format.
+            When `timeframe` is set to `all`, the `date` will be ignored. 
+            For other timeframes, `date` must be provided.
+            For `weekly` or `monthly` timeframes, `date` will automatically adjust to the start of the period (Monday for weekly, first of the month for monthly).
+          schema:
+            type: string
+            format: date
+            example: 2024-01-01
+        - name: timeframe
+          in: query
+          required: false
+          description: The timeframe over which to calculate the metrics.
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, all]
+            default: all
+            description: >
+              Defaults to `all` if no `date` is provided; otherwise, defaults to `daily`.
+      responses:
+        '200':
+          description: An object containing the requested channel metrics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  date: 
+                    type: string
+                    format: date
+                    description: >
+                      The start date of the metrics period. If `timeframe` is `all`, this will be the date of the first cast in the channel.
+                  casts:
+                    type: integer 
+                    description: Total casts posted in the channel during the period.
+                  replies:
+                    type: integer
+                    description: Total replies posted in the channel during the period.
+                  likes:
+                    type: integer 
+                    description: Total likes submitted in the channel during the period.
+                  recasts:
+                    type: integer
+                    description: Total recasts submitted in the channel during the period.
+                  contributors:
+                    type: integer
+                    description: Number of users who contributed to the channel during the period by sending at least one cast or reply.
+        '400':
+          description: The provided channel ID is invalid.
+        '404':
+          description: The specified channel could not be found.
+
+  /channel/{channelID}/contributors:
+    get:
+      summary: Get channel contributors
+      description: >
+        Retrieves a list of the channel's top contributors, sorted by their contribution amount in descending order.
+      parameters:
+        - name: channelID
+          in: path
+          required: true
+          description: The unique identifier of the channel.
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: false
+          description: >
+            The date for which to retrieve contributors, in YYYY-MM-DD format.
+          schema:
+            type: string
+            format: date
+            example: 2024-01-01
+        - name: timeframe
+          in: query
+          required: false
+          description: >
+            The period over which to calculate top contributors.
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, all]  
+            default: daily
+        - name: page
+          in: query
+          required: false
+          description: The page number to retrieve, starting from 0.
+          schema:
+            type: integer
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          description: The maximum number of contributors to return per page. Defaults to 50, maximum allowed is 100.
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+      responses:
+        '200':
+          description: A list of the channel's top contributors for the specified period.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    fid:
+                      type: string
+                      description: The Farcaster user ID of the contributor.
+                    username:
+                      type: string 
+                      description: The username of the contributor.
+                    casts:
+                      type: integer
+                      description: The number of casts made by this contributor during the period.
+                    replies:  
+                      type: integer
+                      description: The number of replies made by this contributor during the period.
+                    receivedReplies:
+                      type: integer 
+                      description: The number of replies received by this contributor during the period.
+                    receivedLikes:
+                      type: integer
+                      description: The number of likes received by this contributor during the period.
+                    receivedRecasts:
+                      type: integer
+                      description: The number of recasts received by this contributor during the period.
+                    contribution:  
+                      type: integer
+                      description: The total contribution amount for this contributor during the period.
+        '400':
+          description: The provided channel ID is invalid.
+        '404':
+          description: The specified channel could not be found.
+
+  /user/{username}/metrics:
+    get:
+      summary: Get user metrics
+      description: >
+        Retrieves metrics for a specific user, including total casts, replies, likes, recasts, and contributions per channel. This data helps channel owners and developers evaluate the user's engagement and activity level.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: The user's username, typically their first name.
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: false
+          description: >
+            The date for which to retrieve metrics, in YYYY-MM-DD format.
+            When `timeframe` is set to `all`, the `date` will be ignored.
+            For other timeframes, `date` must be provided. 
+            For `weekly` or `monthly` timeframes, `date` will automatically adjust to the start of the period (Monday for weekly, first of the month for monthly).
+          schema:
+            type: string
+            format: date
+            example: 2024-01-01
+        - name: timeframe
+          in: query
+          required: false
+          description: >
+            The period over which to calculate the metrics.
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, all]
+            default: daily
+            description: >
+              Defaults to `all` if no `date` is provided; otherwise, defaults to `daily`.
+      responses:
+        '200':
+          description: A list of the user's metrics across all channels for the specified period.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    date:
+                      type: string
+                      format: date
+                      description: >
+                        The start date of the metrics period. If `timeframe` is `all`, this will be the date of the user's first cast in the channel.
+                    channelID:
+                      type: string
+                      description: The unique identifier of the channel.
+                    casts:
+                      type: integer
+                      description: Total casts made by the user in this channel during the period.
+                    replies:
+                      type: integer 
+                      description: Total replies made by the user in this channel during the period.
+                    receivedReplies:
+                      type: integer
+                      description: Total replies received by the user in this channel during the period.
+                    receivedLikes:
+                      type: integer
+                      description: Total likes received by the user in this channel during the period.
+                    receivedRecasts:
+                      type: integer
+                      description: Total recasts received by the user in this channel during the period.
+                    contribution:
+                      type: integer
+                      description: The user's total contribution amount in this channel during the period.
+        '400':
+          description: The provided username is invalid.
+        '404':
+          description: The specified user could not be found.
